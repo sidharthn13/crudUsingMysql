@@ -38,7 +38,10 @@ app.get("/users",(req,res)=>{res.end(`retrieved all data`)})
 
 app.put("/users/:id",validateInput,(req,res)=>{res.end(`updated ${req.params.id}`)})
 
-app.delete("/users/:id",(req,res)=>{res.end(`deleted ${req.params.id}`)})
+app.delete("/users/:id",(req,res)=>{
+    const id = req.params.id;
+    deleteUser(id);
+    res.end(`deleted ${req.params.id}`);})
 
 app.listen(3000,()=>{console.log('server instance listening at port 3000')});
 
@@ -47,5 +50,12 @@ function createUser(name,age,email){
     const sqlQuery = `INSERT INTO users (name,age,email) VALUES ("${name}",${age},"${email}")`
     connection.query(sqlQuery,(error,result)=>{
         if(error){console.log(error);}
+    })
+}
+
+function deleteUser(id){
+    const sqlQuery = `DELETE FROM users WHERE id = ${id}`
+    connection.query(sqlQuery,(error,result)=>{
+        if(error){console.log(error)}
     })
 }
