@@ -1,13 +1,10 @@
 
 const{body,param,validationResult} = require("express-validator")
 const validateInput  = [
-    param('id').custom((paramID,{req})=>{
-        if(paramID){paramID.isInt().withMessage('Parameter must be an integer').toInt()}
-        return true;
-    }),
+    param('id').toInt(),
 body().custom((payload,{req})=>{
     const keys = Object.keys(payload)
-    if (keys.length!=3){throw new Error("Input should have exactly 2 key value pairs");}
+    if (keys.length!=3){throw new Error("Input should have exactly 3 key value pairs");}
     if (!payload.name) {
         throw new Error("There must be a name key");
       }
