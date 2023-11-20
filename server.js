@@ -16,17 +16,19 @@ connection.connect((err) => {
   }
 });
 app.post("/users", validateInput, (req, res) => {
-  const name = req.body.name;
-  const age = req.body.age;
-  const email = req.body.email;
-  const validationQuery = `SELECT name FROM crud.users WHERE email="${email}"`;
+  const userDetails = {
+    name: req.body.name,
+    age: req.body.age,
+    email: req.body.email,
+  };
+  const validationQuery = `SELECT name FROM crud.users WHERE email="${userDetails.email}"`;
   connection.query(validationQuery, (error, result) => {
     if (result.length > 0) {
       return res.end(
         "There is already an account registered with this Email-ID"
       );
     }
-    const sqlQuery = `INSERT INTO users (name,age,email) VALUES ("${name}",${age},"${email}");`;
+    const sqlQuery = `INSERT INTO users (name,age,email) VALUES ("${userDetails.name}",${userDetails.age},"${userDetails.email}");`;
     connection.query(sqlQuery, (error, result) => {
       if (error) {
         console.log(error);
@@ -58,11 +60,13 @@ app.get("/users", (req, res) => {
   });
 });
 app.put("/users/:id", validateInput, (req, res) => {
-  const id = req.params.id;
-  const name = req.body.name;
-  const age = req.body.age;
-  const email = req.body.email;
-  updateUser(id, name, age, email);
+  const userDetails = {
+    id: req.params.id,
+    name: req.body.name,
+    age: req.body.age,
+    email: req.body.email,
+  };
+  updateUser(userDetails);
   res.end(`updated ${req.params.id}`);
 });
 app.delete("/users/:id", (req, res) => {
@@ -83,10 +87,15 @@ function deleteUser(id) {
   });
 }
 
-function updateUser(id, name, age, email) {
+function updateUser(userDetails) {
   const sqlQuery = `UPDATE users SET name = ?, age = ?, email = ? WHERE
     id = ? `;
-  newData = [name, age, email, id];
+  newData = [
+    userDetails.name,
+    userDetails.age,
+    userDetails.email,
+    userDetails.id,
+  ];
   connection.query(sqlQuery, newData, (error, result) => {
     if (error) {
       console.log(error);
