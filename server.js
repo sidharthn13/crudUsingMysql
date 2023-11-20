@@ -1,12 +1,14 @@
 const express = require("express");
 const app = express();
 const mysql = require("mysql");
+const dotenv = require("dotenv");
 const { validateInput } = require("./middleware.js");
+dotenv.config();
 const connection = mysql.createConnection({
-  host: "localhost",
-  user: "sidharth",
-  password: "sidharth1311",
-  database: "crud",
+  host: process.env.DBhost,
+  user: process.env.DBuser,
+  password: process.env.DBpassword,
+  database: process.env.DB,
 });
 
 app.use(express.json()); //middleware to parse JSON payload
