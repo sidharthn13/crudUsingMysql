@@ -19,8 +19,22 @@ app.post("/users", validateInput, (req, res) => {
   const name = req.body.name;
   const age = req.body.age;
   const email = req.body.email;
-  createUser(name, age, email);
-  res.status(200).end("account created");
+  const validationQuery = `SELECT name FROM crud.users WHERE email="${email}"`;
+  connection.query(validationQuery, (error, result) => {
+    if (result.length > 0) {
+      return res.end(
+        "There is already an account registered with this Email-ID"
+      );
+    }
+    const sqlQuery = `INSERT INTO users (name,age,email) VALUES ("${name}",${age},"${email}");`;
+    connection.query(sqlQuery, (error, result) => {
+      if (error) {
+        console.log(error);
+        return;
+      }
+      res.status(200).end("account created");
+    });
+  });
 });
 app.get("/users/:id", (req, res) => {
   const id = req.params.id;
@@ -59,15 +73,6 @@ app.delete("/users/:id", (req, res) => {
 app.listen(3000, () => {
   console.log("server instance listening at port 3000");
 });
-
-function createUser(name, age, email) {
-  const sqlQuery = `INSERT INTO users (name,age,email) VALUES ("${name}",${age},"${email}");`;
-  connection.query(sqlQuery, (error, result) => {
-    if (error) {
-      console.log(error);
-    }
-  });
-}
 
 function deleteUser(id) {
   const sqlQuery = `DELETE FROM users WHERE id = ${id};`;
