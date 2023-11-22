@@ -1,6 +1,6 @@
 const express = require("express");
 const app = express();
-const mysql = require("mysql");
+const mysql = require("mysql2");
 const dotenv = require("dotenv");
 const { validateInput } = require("./middleware.js");
 dotenv.config();
@@ -10,6 +10,16 @@ const connection = mysql.createConnection({
   password: process.env.DBpassword,
   database: process.env.DB,
 });
+
+
+//using sequelize
+const tables = require("./models")
+
+
+
+
+
+
 
 app.use(express.json()); //middleware to parse JSON payload
 connection.connect((err) => {
@@ -76,9 +86,24 @@ app.delete("/users/:id", (req, res) => {
   deleteUser(id);
   res.end(`deleted ${req.params.id}`);
 });
-app.listen(3000, () => {
-  console.log("server instance listening at port 3000");
-});
+
+
+//sequelize ORM instance used inside call back function of server.listen
+
+
+  app.listen(3000, () => {
+    console.log("server instance listening at port 3000");
+    
+      tables.sequelize.sync().then((res)=>{console.log("tables created")});
+
+  });
+
+
+
+
+
+
+
 
 function deleteUser(id) {
   const sqlQuery = `DELETE FROM users WHERE id = ${id};`;
