@@ -18,6 +18,7 @@ const sequelize = require("./config/database.js")
 const customers = require("./models/customers.js");
 const orders = require("./models/orders.js");
 const products = require("./models/products.js");
+const orderItems = require("./models/orderItems.js")
 
 
 
@@ -90,13 +91,13 @@ app.delete("/users/:id", (req, res) => {
 
 //sequelize ORM instance used inside call back function of server.listen
 
-
   app.listen(3000, () => {
     console.log("server instance listening at port 3000");
     
       customers.sync().then((res)=>{console.log("customer table created")});
       orders.sync().then((res)=>{console.log("orders table created")});
       products.sync().then((res)=>{console.log("products table created")});
+      orderItems.sync().then((res)=>{console.log("orderItems table created")});
   });
 
 
