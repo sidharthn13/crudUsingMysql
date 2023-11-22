@@ -13,7 +13,9 @@ const connection = mysql.createConnection({
 
 
 //using sequelize
-const sequelize = require("./config/database.js")
+const { Sequelize} = require('sequelize')
+
+const sequelize = require('./config/database.js');
 
 const customers = require("./models/customers.js");
 const orders = require("./models/orders.js");
@@ -88,6 +90,24 @@ app.delete("/users/:id", (req, res) => {
   res.end(`deleted ${req.params.id}`);
 });
 
+app.get("/customers/ledger",async(req,res)=>{
+  const joinQuery = `
+  
+SELECT CONCAT(c.firstName, ' ',c.lastName) AS FullName ,o.OrderDate AS dateOfOrder ,p.productName, p.price AS pricePerUnit,oi.quantity, oi.quantity * p.price AS totalAmount   
+FROM customers c INNER JOIN orders o ON c.customerID = o.customerID
+INNER JOIN orderItems oi ON o.orderID = oi.orderID INNER JOIN products p ON oi.productID = p.productID;
+`
+try{
+  await sequelize.query(`USE learningSequelize;`)
+const result = await sequelize.query(joinQuery,{ type: Sequelize.QueryTypes.SELECT });
+res.status(200).json(result)
+}
+catch(error){
+  console.log(`Could not perform join operation:${error}`)
+  res.status(500).json({'error':error})
+}
+
+});
 
 //sequelize ORM instance used inside call back function of server.listen
 
@@ -159,3 +179,4 @@ async function generate_rows(){
     console.log(`warning, error: ${error}`)
   }
 }
+
