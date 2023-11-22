@@ -1,13 +1,6 @@
-const { Sequelize, DataTypes } = require('sequelize');
+const { DataTypes } = require('sequelize');
+const sequelize = require('../config/database.js');
 
-// Create a Sequelize instance and connect to DB
-const sequelize = new Sequelize('learningSequelize', 'sidharth', 'sidharth1311', {
-  host: 'localhost',
-  dialect: 'mysql', 
-});
-
-
-module.exports = (sequelize, DataTypes)=>{
     const customers = sequelize.define("customers",{
         customerID:{
             type:DataTypes.INTEGER,
@@ -32,5 +25,4 @@ module.exports = (sequelize, DataTypes)=>{
             allowNull: false,
         }
     })
-    return customers;
-}
+module.exports = customers;

@@ -1,9 +1,10 @@
 
+const { DataTypes } = require('sequelize');
+const sequelize = require('../config/database.js');
+
+const customers = require("./customers.js")
 
 
-
-const customers = require("./customers")
-module.exports = (sequelize, DataTypes)=>{
     const orders = sequelize.define("orders",{
         orderID:{
             type:DataTypes.INTEGER,
@@ -14,7 +15,7 @@ module.exports = (sequelize, DataTypes)=>{
             type:DataTypes.INTEGER,
             allowNull:false,
             references:{
-                model:'customers.js',
+                model:customers,
                 key:'customerID'
             }
         },
@@ -27,5 +28,5 @@ module.exports = (sequelize, DataTypes)=>{
             allowNull: false,
           },
         });
-    return orders;
-}
+
+    module.exports = orders;

@@ -13,7 +13,10 @@ const connection = mysql.createConnection({
 
 
 //using sequelize
-const tables = require("./models")
+const sequelize = require("./config/database.js")
+
+const customers = require("./models/customers.js");
+const orders = require("./models/orders.js");
 
 
 
@@ -94,8 +97,8 @@ app.delete("/users/:id", (req, res) => {
   app.listen(3000, () => {
     console.log("server instance listening at port 3000");
     
-      tables.sequelize.sync().then((res)=>{console.log("tables created")});
-
+      customers.sync().then((res)=>{console.log("customer table created")});
+      orders.sync().then((res)=>{console.log("orders table created")})
   });
 
 
