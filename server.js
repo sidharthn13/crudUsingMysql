@@ -98,6 +98,7 @@ app.delete("/users/:id", (req, res) => {
       orders.sync().then((res)=>{console.log("orders table created")});
       products.sync().then((res)=>{console.log("products table created")});
       orderItems.sync().then((res)=>{console.log("orderItems table created")});
+      //generate_rows()
   });
 
 
@@ -124,4 +125,37 @@ function updateUser(userDetails) {
       console.log(error);
     }
   });
+}
+
+//using bulk create to insert data
+async function generate_rows(){
+  const customersData = [
+    { firstName: 'John', lastName: 'Doe', email: 'john.doe@email.com', country: 'USA' },
+    { firstName: 'Jane', lastName: 'Smith', email: 'jane.smith@email.com', country: 'Canada' },
+    { firstName: 'andy', lastName: 'gold', email: 'andy.gold@email.com', country: 'UK' },
+  ];
+  const ordersData = [
+    {customerID:1, OrderDate:'2023-01-15',TotalAmount: 150.00},
+    {customerID:2, OrderDate:'2023-02-20',TotalAmount: 200.50},
+    {customerID:3, OrderDate:'2023-03-10',TotalAmount: 75.25},
+  ];
+  const productsData = [
+    {productName:'laptop',price:800.00},
+    {productName:'smartphone',price:400.00},
+    {productName:'headphones',price:50.00},
+  ];
+  const orderItemsData = [
+    {orderID:1,productID:1,quantity:2,pricePerUnit:800.00},
+    {orderID:2,productID:2,quantity:1,pricePerUnit:400.00},
+    {orderID:3,productID:3,quantity:3,pricePerUnit:50.00},
+  ]
+  try{
+  const customerTableResult = await customers.bulkCreate(customersData);
+  const ordersTableResult = await orders.bulkCreate(ordersData);
+  const productsTableResult = await products.bulkCreate(productsData);
+  const orderItemsTableResult = await orderItems.bulkCreate(orderItemsData);
+  }
+  catch(error){
+    console.log(`warning, error: ${error}`)
+  }
 }
