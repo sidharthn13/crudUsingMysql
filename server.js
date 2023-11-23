@@ -17,13 +17,55 @@ const customers = require("./models/customers.js");
 const orders = require("./models/orders.js");
 const products = require("./models/products.js");
 const orderItems = require("./models/orderItems.js");
-
+//using swagger dependencies
+const swaggerJSDocs= require("swagger-jsdoc");
+const swaggerUi = require("swagger-ui-express");
+const swaggerOptions =  {
+  definition: {
+    openapi: '3.0.0', 
+    info: {
+      title: 'CRUD API Documentation ',
+      version: '1.0.0',
+      description: 'performs CRUD operations on a sample dataset using mysql',
+    },
+    servers: [
+      {
+        url:`https://localhost:3000`,
+      },
+    ],
+  },
+  apis: ['./server.js'], // specify the path to API routes files
+};
+// Initialize swagger-jsdoc
+const swaggerSpec = swaggerJSDocs(swaggerOptions);
+// Serve Swagger UI at /api-docs endpoint
+app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(swaggerSpec));
 app.use(express.json()); //middleware to parse JSON payload
 connection.connect((err) => {
   if (!err) {
     console.log("connected to DB");
   }
 });
+/**
+ * @swagger
+ * /users:
+ *   post:
+ *     summary: Create a new user account
+ *     description: Creates a new user account with unique email
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           example:
+ *             name: John Doe
+ *             age: 25
+ *             email: john.doe@example.com
+ *     responses:
+ *       200:
+ *         description: User account created successfully
+ *       400:
+ *         description: Bad request. An account with the provided email already exists.
+ */
 app.post("/users", validateInput, (req, res) => {
   const userDetails = {
     name: req.body.name,
@@ -33,7 +75,7 @@ app.post("/users", validateInput, (req, res) => {
   const validationQuery = `SELECT name FROM crud.users WHERE email="${userDetails.email}"`;
   connection.query(validationQuery, (error, result) => {
     if (result.length > 0) {
-      return res.end(
+      return res.status(400).end(
         "There is already an account registered with this Email-ID"
       );
     }
@@ -47,6 +89,32 @@ app.post("/users", validateInput, (req, res) => {
     });
   });
 });
+/**
+ * @swagger
+ * /users/{id}:
+ *   get:
+ *     summary: Get user by ID
+ *     description: Retrieve user details based on the provided user ID
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         description: ID of the user to retrieve
+ *         required: true
+ *         schema:
+ *           type: integer
+ *     responses:
+ *       200:
+ *         description: User details retrieved successfully
+ *         content:
+ *           application/json:
+ *             example:
+ *               id: 1
+ *               name: John Doe
+ *               age: 25
+ *               email: john.doe@example.com
+ *       500:
+ *         description: Internal Server Error
+ */
 app.get("/users/:id", (req, res) => {
   const id = req.params.id;
   const sqlQuery = `SELECT * FROM crud.users WHERE id = ${id}`;
@@ -58,6 +126,30 @@ app.get("/users/:id", (req, res) => {
     res.status(200).json(results);
   });
 });
+/**
+ * @swagger
+ * /users:
+ *   get:
+ *     summary: Get all users
+ *     description: Retrieve a list of all users in the system
+ *     responses:
+ *       200:
+ *         description: Users retrieved successfully
+ *         content:
+ *           application/json:
+ *             example:
+ *               - id: 1
+ *                 name: John Doe
+ *                 age: 25
+ *                 email: john.doe@example.com
+ *               - id: 2
+ *                 name: Jane Smith
+ *                 age: 30
+ *                 email: jane.smith@example.com
+ *               # Add more user objects as needed
+ *       500:
+ *         description: Internal Server Error
+ */
 app.get("/users", (req, res) => {
   const sqlQuery = `SELECT * FROM crud.users`;
   connection.query(sqlQuery, (error, results) => {
@@ -68,6 +160,43 @@ app.get("/users", (req, res) => {
     res.status(200).json(results);
   });
 });
+/**
+ * @swagger
+ * /users/{id}:
+ *   put:
+ *     summary: Update user by ID
+ *     description: Update user details based on the provided user ID
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         description: ID of the user to update
+ *         required: true
+ *         schema:
+ *           type: integer
+ *     requestBody:
+ *       description: User details to update
+ *       required: true
+ *       content:
+ *         application/json:
+ *           example:
+ *             name: Updated John Doe
+ *             age: 30
+ *             email: updated.john.doe@example.com
+ *           schema:
+ *             type: object
+ *             properties:
+ *               name:
+ *                 type: string
+ *               age:
+ *                 type: integer
+ *               email:
+ *                 type: string
+ *     responses:
+ *       200:
+ *         description: User details updated successfully
+ *       500:
+ *         description: Internal Server Error
+ */
 app.put("/users/:id", validateInput, (req, res) => {
   const userDetails = {
     id: req.params.id,
@@ -78,6 +207,25 @@ app.put("/users/:id", validateInput, (req, res) => {
   updateUser(userDetails);
   res.end(`updated ${req.params.id}`);
 });
+/**
+ * @swagger
+ * /users/{id}:
+ *   delete:
+ *     summary: Delete user by ID
+ *     description: Delete user details based on the provided user ID
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         description: ID of the user to delete
+ *         required: true
+ *         schema:
+ *           type: integer
+ *     responses:
+ *       200:
+ *         description: User deleted successfully
+ *       500:
+ *         description: Internal Server Error
+ */
 app.delete("/users/:id", (req, res) => {
   const id = req.params.id;
   deleteUser(id);
