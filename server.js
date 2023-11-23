@@ -10,12 +10,9 @@ const connection = mysql.createConnection({
   password: process.env.DBpassword,
   database: process.env.DB,
 });
-
 //using sequelize
 const { Sequelize } = require("sequelize");
-
 const sequelize = require("./config/database.js");
-
 const customers = require("./models/customers.js");
 const orders = require("./models/orders.js");
 const products = require("./models/products.js");
@@ -86,7 +83,7 @@ app.delete("/users/:id", (req, res) => {
   deleteUser(id);
   res.end(`deleted ${req.params.id}`);
 });
-
+//routes to handle CRUD operations on customers sample data(using ORM)
 app.get("/customers/ledger", async (req, res) => {
   const joinQuery = `
   
@@ -105,7 +102,6 @@ INNER JOIN orderItems oi ON o.orderID = oi.orderID INNER JOIN products p ON oi.p
     res.status(500).json({ error: error });
   }
 });
-
 app.post("/customers", async (req, res) => {
   const data = req.body;
   console.log(data);
@@ -126,9 +122,44 @@ app.post("/customers", async (req, res) => {
     res.status(400).end(error.message);
   }
 });
-
+app.get("/customers", async (req, res) => {
+  const result = await customers.findAll();
+  res.status(200).json(result);
+});
+app.put("/customers/:id", async (req, res) => {
+  try {
+    const data = req.body;
+    const id = req.params.id;
+    const rowToUpdate = await customers.findByPk(id);
+    if (rowToUpdate) {
+      rowToUpdate.set({
+        firstName: data.firstName,
+        lastName: data.lastName,
+        email: data.email,
+        country: data.country,
+      });
+      await rowToUpdate.save();
+      return res.status(200).end("Record updated");
+    }
+    res.status(400).end("No user with that ID");
+  } catch (error) {
+    res.status(500).json({ warning: error });
+  }
+});
+app.delete("/customers/:id", async (req, res) => {
+  try {
+    const id = req.params.id;
+    const rowToBeDeleted = await customers.findByPk(id);
+    if (rowToBeDeleted) {
+      await rowToBeDeleted.destroy();
+      return res.status(200).end("User record deleted");
+    }
+    res.status(400).end("No user with that ID");
+  } catch (error) {
+    res.status(500).json({ warning: error });
+  }
+});
 //sequelize ORM instance used inside call back function of server.listen
-
 app.listen(3000, () => {
   console.log("server instance listening at port 3000");
 
@@ -172,7 +203,7 @@ function updateUser(userDetails) {
   });
 }
 
-//using bulk create to insert data
+//using bulk create to insert data(sample data)
 async function generate_rows() {
   const customersData = [
     {
