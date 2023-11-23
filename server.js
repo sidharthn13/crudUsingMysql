@@ -57,9 +57,9 @@ connection.connect((err) => {
  *       content:
  *         application/json:
  *           example:
- *             name: John Doe
- *             age: 25
- *             email: john.doe@example.com
+ *             name: sidharth
+ *             age: 22
+ *             email: sidharth@gmail.com
  *     responses:
  *       200:
  *         description: User account created successfully
@@ -109,9 +109,9 @@ app.post("/users", validateInput, (req, res) => {
  *           application/json:
  *             example:
  *               id: 1
- *               name: John Doe
- *               age: 25
- *               email: john.doe@example.com
+ *               name: sidharth
+ *               age: 22
+ *               email: sidharth@gmail.com
  *       500:
  *         description: Internal Server Error
  */
@@ -139,13 +139,13 @@ app.get("/users/:id", (req, res) => {
  *           application/json:
  *             example:
  *               - id: 1
- *                 name: John Doe
- *                 age: 25
- *                 email: john.doe@example.com
+ *                 name: sidharth
+ *                 age: 22
+ *                 email: sidharth@gmail.com
  *               - id: 2
- *                 name: Jane Smith
- *                 age: 30
- *                 email: jane.smith@example.com
+ *                 name: atul
+ *                 age: 23
+ *                 email: atul@gmail.com
  *               # Add more user objects as needed
  *       500:
  *         description: Internal Server Error
@@ -179,9 +179,9 @@ app.get("/users", (req, res) => {
  *       content:
  *         application/json:
  *           example:
- *             name: Updated John Doe
- *             age: 30
- *             email: updated.john.doe@example.com
+ *             name: Updated sidharth
+ *             age: 25
+ *             email: updated sidharth@gmail.com
  *           schema:
  *             type: object
  *             properties:
