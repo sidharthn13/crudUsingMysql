@@ -1,8 +1,10 @@
 const express = require("express");
 const app = express();
 const mysql = require("mysql2");
+const jwt = require("jsonwebtoken")
 const dotenv = require("dotenv");
 const { validateInput } = require("./middleware.js");
+const{validateUserData}=require("./userAccountMiddleware.js")
 dotenv.config();
 const connection = mysql.createConnection({
   host: process.env.DBhost,
@@ -17,6 +19,7 @@ const customers = require("./models/customers.js");
 const orders = require("./models/orders.js");
 const products = require("./models/products.js");
 const orderItems = require("./models/orderItems.js");
+const userAccounts = require("./models/userAccounts.js")
 //using swagger dependencies
 const swaggerJSDocs= require("swagger-jsdoc");
 const swaggerUi = require("swagger-ui-express");
@@ -307,6 +310,39 @@ app.delete("/customers/:id", async (req, res) => {
     res.status(500).json({ warning: error });
   }
 });
+
+//login, sign up and user authentication 
+app.post("/accounts/signup",validateUserData,async(req,res)=>{
+  const data = {userName:req.body.userName,email:req.body.email,password:req.body.password}
+  try{
+    await userAccounts.create({
+      userName: data.userName,
+      email:data.email,
+      password:data.password
+    });
+    res.status(200).send("Account created")
+  }
+  catch(error){res.status(400).json({warning: error})}
+})
+app.post("/accounts/login",async(req,res)=>{
+  const data = req.body
+  const result =await userAccounts.findAll({where:{userName:data.userName,password:data.password}})
+  // console.log(result)
+  if(result.length>0){
+    const tokenPayload = {customerID:result[0].customerID,userName:result[0].userName}
+    const secretKey=process.env.SECRET_KEY
+    const token = jwt.sign(tokenPayload,secretKey)
+    res.cookie("jwtToken",token)
+    return res.status(200).end('log in successful')
+  }
+  res.status(400).end("No such user exists")
+});
+
+app.post("/accounts/dashboard",(req,res)=>{
+  
+});
+
+
 //sequelize ORM instance used inside call back function of server.listen
 app.listen(3000, () => {
   console.log("server instance listening at port 3000");
@@ -323,6 +359,9 @@ app.listen(3000, () => {
   orderItems.sync().then((res) => {
     console.log("orderItems table created");
   });
+  userAccounts.sync().then((res)=>{
+    console.log('created login verification table for users')
+  })
   //generate_rows()
 });
 
