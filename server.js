@@ -339,7 +339,12 @@ app.post("/accounts/login",async(req,res)=>{
 });
 
 app.post("/accounts/dashboard",(req,res)=>{
-  
+  const headerData = req.headers
+  const token = headerData.bearer
+  const tokenDecoded =jwt.verify(token,process.env.SECRET_KEY,(error,result)=>{
+    if(error){return res.status(400).end("invalid token signature, user authentication failed")}
+    res.status(200).end(`welcome user ${result.customerID}`)
+  })
 });
 
 
