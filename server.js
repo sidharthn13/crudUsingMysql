@@ -346,6 +346,16 @@ app.post("/accounts/dashboard",(req,res)=>{
     res.status(200).end(`welcome user ${result.customerID}`)
   })
 });
+app.delete("/accounts/dashboard",async(req,res)=>{
+  const headerData = req.headers
+  const token = headerData.bearer
+  const tokenDecoded =jwt.verify(token,process.env.SECRET_KEY,(error,result)=>{
+    if(error){return res.status(400).end("invalid token signature, user authentication failed")}
+    userAccounts.destroy({where:{customerID:result.customerID}})
+    res.status(200).end(`deleted user ${result.customerID}`)
+  })
+})
+
 
 
 //sequelize ORM instance used inside call back function of server.listen
