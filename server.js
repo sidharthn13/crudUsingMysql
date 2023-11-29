@@ -1,8 +1,11 @@
 const express = require("express");
 const app = express();
 const mysql = require("mysql2");
+const jwt = require("jsonwebtoken");
 const dotenv = require("dotenv");
 const { validateInput } = require("./middleware.js");
+const { validateUserData } = require("./userAccountMiddleware.js");
+const cookieParser = require("cookie-parser");
 dotenv.config();
 const connection = mysql.createConnection({
   host: process.env.DBhost,
@@ -10,42 +13,45 @@ const connection = mysql.createConnection({
   password: process.env.DBpassword,
   database: process.env.DB,
 });
-//using sequelize
+//importing sequelize and models into main file
 const { Sequelize } = require("sequelize");
 const sequelize = require("./config/database.js");
 const customers = require("./models/customers.js");
 const orders = require("./models/orders.js");
 const products = require("./models/products.js");
 const orderItems = require("./models/orderItems.js");
+const userAccounts = require("./models/userAccounts.js");
 //using swagger dependencies
-const swaggerJSDocs= require("swagger-jsdoc");
+const swaggerJSDocs = require("swagger-jsdoc");
 const swaggerUi = require("swagger-ui-express");
-const swaggerOptions =  {
+const swaggerOptions = {
   definition: {
-    openapi: '3.0.0', 
+    openapi: "3.0.0",
     info: {
-      title: 'CRUD API Documentation ',
-      version: '1.0.0',
-      description: 'performs CRUD operations on a sample dataset using mysql',
+      title: "CRUD API Documentation ",
+      version: "1.0.0",
+      description: "performs CRUD operations on a sample dataset using mysql",
     },
     servers: [
       {
-        url:`http://localhost:3000`,
+        url: `http://localhost:3000`,
       },
     ],
   },
-  apis: ['./server.js'], // specify the path to API routes files
+  apis: ["./server.js"], // specify the path to API routes files
 };
-// Initialize swagger-jsdoc
 const swaggerSpec = swaggerJSDocs(swaggerOptions);
-// Serve Swagger UI at /api-docs endpoint
-app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(swaggerSpec));
+app.use("/api-docs", swaggerUi.serve, swaggerUi.setup(swaggerSpec)); // Serve Swagger UI at /api-docs endpoint
 app.use(express.json()); //middleware to parse JSON payload
+app.use("/accounts/refresh", cookieParser()); //middleware to parse cookies sent in http req header
 connection.connect((err) => {
   if (!err) {
     console.log("connected to DB");
   }
 });
+
+//using mysql2 library to perform crud operations, documentation done with swagger
+
 /**
  * @swagger
  * /users:
@@ -75,9 +81,9 @@ app.post("/users", validateInput, (req, res) => {
   const validationQuery = `SELECT name FROM crud.users WHERE email="${userDetails.email}"`;
   connection.query(validationQuery, (error, result) => {
     if (result.length > 0) {
-      return res.status(400).end(
-        "There is already an account registered with this Email-ID"
-      );
+      return res
+        .status(400)
+        .end("There is already an account registered with this Email-ID");
     }
     const sqlQuery = `INSERT INTO users (name,age,email) VALUES ("${userDetails.name}",${userDetails.age},"${userDetails.email}");`;
     connection.query(sqlQuery, (error, result) => {
@@ -231,7 +237,8 @@ app.delete("/users/:id", (req, res) => {
   deleteUser(id);
   res.end(`deleted ${req.params.id}`);
 });
-//routes to handle CRUD operations on customers sample data(using ORM)
+
+//API endpoints to handle CRUD operations on customers sample data(using ORM)
 app.get("/customers/ledger", async (req, res) => {
   const joinQuery = `
   
@@ -307,6 +314,95 @@ app.delete("/customers/:id", async (req, res) => {
     res.status(500).json({ warning: error });
   }
 });
+
+//login, sign up and user authentication done on a separate table
+app.post("/accounts/signup", validateUserData, async (req, res) => {
+  const data = {
+    userName: req.body.userName,
+    email: req.body.email,
+    password: req.body.password,
+  };
+  try {
+    await userAccounts.create({
+      userName: data.userName,
+      email: data.email,
+      password: data.password,
+    });
+    res.status(200).send("Account created");
+  } catch (error) {
+    res.status(400).json({ warning: error });
+  }
+});
+app.post("/accounts/login", async (req, res) => {
+  const data = req.body;
+  const result = await userAccounts.findAll({
+    where: { userName: data.userName, password: data.password },
+  });
+  // console.log(result)
+  if (result.length > 0) {
+    const tokenPayload = {
+      customerID: result[0].customerID,
+      userName: result[0].userName,
+    };
+    const secretKey = process.env.SECRET_KEY;
+    const refreshSecret = process.env.REFRESH_SECRET;
+    const accessToken = jwt.sign(tokenPayload, secretKey, { expiresIn: "1m" });
+    const refreshToken = jwt.sign(tokenPayload, refreshSecret);
+    res.cookie("accessToken", accessToken);
+    res.cookie("refreshToken", refreshToken, { httpOnly: true });
+    return res.status(200).end("log in successful");
+  }
+  res.status(400).end("No such user exists");
+});
+app.post("/accounts/dashboard", (req, res) => {
+  const headerData = req.headers;
+  const token = headerData.bearer;
+  const tokenDecoded = jwt.verify(
+    token,
+    process.env.SECRET_KEY,
+    (error, result) => {
+      if (error) {
+        return res
+          .status(400)
+          .end("invalid token signature, user authentication failed");
+      }
+      res.status(200).end(`welcome user ${result.customerID}`);
+    }
+  );
+});
+app.delete("/accounts/dashboard", async (req, res) => {
+  const headerData = req.headers;
+  const token = headerData.bearer;
+  const tokenDecoded = jwt.verify(
+    token,
+    process.env.SECRET_KEY,
+    (error, result) => {
+      if (error) {
+        return res.status(400).end("invalid token, user authentication failed");
+      }
+      userAccounts.destroy({ where: { customerID: result.customerID } });
+      res.status(200).end(`deleted user ${result.customerID}`);
+    }
+  );
+});
+app.post("/accounts/refresh", async (req, res) => {
+  const refreshToken = req.cookies.refreshToken;
+  jwt.verify(refreshToken, process.env.REFRESH_SECRET, (error, result) => {
+    if (error) {
+      return res.status(400).json({ Error: `${error}` });
+    }
+    const newTokenPayload = {
+      customerID: result.customerID,
+      userName: result.userName,
+    };
+    const newAccessToken = jwt.sign(newTokenPayload, process.env.SECRET_KEY, {
+      expiresIn: "1m",
+    });
+    res.cookie("accessToken", newAccessToken);
+    res.status(200).end("Please log in again");
+  });
+});
+
 //sequelize ORM instance used inside call back function of server.listen
 app.listen(3000, () => {
   console.log("server instance listening at port 3000");
@@ -322,6 +418,9 @@ app.listen(3000, () => {
   });
   orderItems.sync().then((res) => {
     console.log("orderItems table created");
+  });
+  userAccounts.sync().then((res) => {
+    console.log("created login verification table for users");
   });
   //generate_rows()
 });
