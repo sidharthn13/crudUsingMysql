@@ -331,7 +331,7 @@ app.post("/accounts/login",async(req,res)=>{
   if(result.length>0){
     const tokenPayload = {customerID:result[0].customerID,userName:result[0].userName}
     const secretKey=process.env.SECRET_KEY
-    const token = jwt.sign(tokenPayload,secretKey)
+    const token = jwt.sign(tokenPayload,secretKey,{expiresIn: "1m"})
     res.cookie("jwtToken",token)
     return res.status(200).end('log in successful')
   }
